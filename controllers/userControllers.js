@@ -49,60 +49,6 @@ const userExists = async (email) => {
     return { exists: false };
 };
 
-// Register a new buyer
-const registerUser = asyncHandler(async (req, res) => {
-    try {
-        await getPool();
-        const { name, email, password } = req.body;
-
-        if (!password) {
-            return res.status(400).json({ error: 'Password is required' });
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const { exists } = await userExists(email);
-
-        if (exists) {
-            return res.status(400).json({ error: 'User with this email already exists' });
-        }
-
-        const sql = 'INSERT INTO Buyer (name, email, password, role) VALUES (?, ?, ?, ?)';
-        await pool.query(sql, [name, email, hashedPassword, 'buyer']);
-
-        res.status(201).json({ message: 'Buyer account created successfully' });
-    } catch (error) {
-        console.error('Error during buyer registration:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-});
-
-// Register a new seller
-const registerSeller = asyncHandler(async (req, res) => {
-    try {
-        await getPool();
-        const {
-            fname, lname, uname, email, phoneNumber, dob, gender, password, country, timezone, description, skills,
-        } = req.body;
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const { exists } = await userExists(email);
-
-        if (exists) {
-            return res.status(400).json({ error: 'User with this email already exists' });
-        }
-
-        const sql = `INSERT INTO Sellers 
-        (fname, lname, uname, email, phoneNumber, dob, gender, password, country, timezone, description, skills) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-        await pool.query(sql, [fname, lname, uname, email, phoneNumber, dob, gender, hashedPassword, country, timezone, description, JSON.stringify(skills)]);
-
-        res.status(201).json({ message: 'Seller registered successfully' });
-    } catch (error) {
-        console.error('Error registering seller:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-});
-
 // Login user or seller
 const userLogin = asyncHandler(async (req, res) => {
     try {
@@ -163,4 +109,4 @@ const home = async (req, res) => {
 };
 
 // Export controller functions
-export { registerUser, userLogin, home, registerSeller };
+export {  userLogin, home };
