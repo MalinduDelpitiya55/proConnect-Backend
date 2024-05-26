@@ -51,6 +51,12 @@ const userExists = async (email) => {
     return { exists: false };
 };
 
+const checkUserExists = async (userId) => {
+    const pool = await getPool();
+    const [userCheckResult] = await pool.query('SELECT id FROM Sellers WHERE id = ?', [userId]);
+    return userCheckResult.length > 0;
+};
+
 const registerSeller = asyncHandler(async (req, res) => {
     const {
         fname, lname, uname, email, phoneNumber, dob, gender, password, country, timezone, description, skills
@@ -61,22 +67,22 @@ const registerSeller = asyncHandler(async (req, res) => {
             return res.status(400).json({ error: 'No file uploaded' });
         }
 
-        const result = await cloudinary.uploader.upload(req.file.path, {
-            transformation: [
-                { gravity: "face", height: 150, width: 150, crop: "thumb" },
-                { radius: 20 },
-                { effect: "sepia" },
-                { overlay: "cloudinary_icon" },
-                { effect: "brightness:90" },
-                { opacity: 60 },
-                { width: 50, crop: "scale" },
-                { flags: "layer_apply", gravity: "south_east", x: 5, y: 5 },
-                { angle: 10 }
-            ]
-        });
+        // const result = await cloudinary.uploader.upload(req.file.path, {
+        //     transformation: [
+        //         { gravity: "face", height: 150, width: 150, crop: "thumb" },
+        //         { radius: 20 },
+        //         { effect: "sepia" },
+        //         { overlay: "cloudinary_icon" },
+        //         { effect: "brightness:90" },
+        //         { opacity: 60 },
+        //         { width: 50, crop: "scale" },
+        //         { flags: "layer_apply", gravity: "south_east", x: 5, y: 5 },
+        //         { angle: 10 }
+        //     ]
+        // });
 
-        const ProfilePicturePublicID = result.public_id;
-        const ProfilePictureURL = result.secure_url;
+        // const ProfilePicturePublicID = result.public_id;
+        // const ProfilePictureURL = result.secure_url;
 
         const pool = await getPool();
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -87,9 +93,9 @@ const registerSeller = asyncHandler(async (req, res) => {
         }
 
         const sql = `INSERT INTO Sellers 
-      (fname, lname, uname, email, phoneNumber, dob, gender, password, country, timezone, description, skills, ProfilePictureURL, ProfilePicturePublicID)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-        await pool.query(sql, [fname, lname, uname, email, phoneNumber, dob, gender, hashedPassword, country, timezone, description, JSON.stringify(skills), ProfilePictureURL, ProfilePicturePublicID]);
+      (fname, lname, uname, email, phoneNumber, dob, gender, password, country, timezone, description, skills)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        await pool.query(sql, [fname, lname, uname, email, phoneNumber, dob, gender, hashedPassword, country, timezone, description, JSON.stringify(skills)]);
 
         res.status(201).json({ message: 'Seller registered successfully' });
     } catch (error) {
@@ -119,18 +125,47 @@ const getSeller = asyncHandler(async (req, res) => {
 });
 
 const updateSeller = asyncHandler(async (req, res) => {
+    console.log("Updating");
+    
+    const userId = req.params.id; // Assuming the user ID is stored in the token
+
+    // Handle form submission logic here
+    console.log('Received form submission from user ID:', userId);
+    const userExists = await checkUserExists(userId);
+    if (!userExists) {
+        return res.status(404).json({ error: 'User not found' });
+    }
+
     try {
         const pool = await getPool();
         const {
-            fname, lname, uname, email, phoneNumber, dob, gender, country, timezone, description, skills,
+            name, description, skills, interests, qualifications, education, courses, experiences, extracurriculars, id
         } = req.body;
-        const { id } = req.params;
+       
+       
+        const sql = `UPDATE Sellers SET
+    job = ? ,
+    description = ?,
+    skills = ?,
+    interests = ?,
+    qualifications = ?,
+    education = ?,
+    courses = ?,
+    experiences = ?,
+    extracurriculars = ?
+    WHERE id = ${userId}`;
 
-        const sql = `UPDATE Sellers SET 
-        fname = ?, lname = ?, uname = ?, email = ?, phoneNumber = ?, dob = ?, gender = ?, country = ?, timezone = ?, description = ?, skills = ? 
-        WHERE id = ?`;
-        await pool.query(sql, [fname, lname, uname, email, phoneNumber, dob, gender, country, timezone, description, JSON.stringify(skills), id]);
-
+        // Convert arrays and objects to JSON strings before passing to the query
+        const skillsString = JSON.stringify(skills);
+        const interestsString = JSON.stringify(interests);
+        const qualificationsString = JSON.stringify(qualifications);
+        const educationString = JSON.stringify(education);
+        const coursesString = JSON.stringify(courses);
+        const experiencesString = JSON.stringify(experiences);
+        const extracurricularsString = JSON.stringify(extracurriculars);
+console.log(skillsString + " " + coursesString + " " + extracurricularsString + " " + coursesString + " " + educationString + " " + interestsString);
+        // Execute the query using parameterized query
+        await pool.query(sql, [name, description, skillsString, interestsString, qualificationsString, educationString, coursesString, experiencesString, extracurricularsString, id]);
         res.status(200).json({ message: 'Seller updated successfully' });
     } catch (error) {
         console.error('Error updating seller:', error);

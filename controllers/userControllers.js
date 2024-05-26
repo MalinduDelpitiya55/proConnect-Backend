@@ -1,6 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { decode } from 'jsonwebtoken';
 import connectDB from '../configs/dbconfig.js';
 
 let pool;
@@ -81,7 +81,7 @@ const userLogin = asyncHandler(async (req, res) => {
                     role: user.role,
                 }
             }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '100s' });
-
+            console.log(jwt.decode(accessToken, { complete: true }));
             return res.status(200).json({
                 status: 'success',
                 message: 'Logged in successfully',
@@ -92,10 +92,12 @@ const userLogin = asyncHandler(async (req, res) => {
                     _id: user.id,
                     role: user.role,
                 }
+               
             });
         } else {
             return res.status(401).json({ error: "Email or password is not valid" });
         }
+        
     } catch (error) {
         console.error('Error during user login:', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -109,4 +111,4 @@ const home = async (req, res) => {
 };
 
 // Export controller functions
-export {  userLogin, home };
+export { userLogin, home };

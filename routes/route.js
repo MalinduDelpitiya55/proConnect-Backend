@@ -4,6 +4,7 @@ import { userLogin, home } from './../controllers/userControllers.js'; // Adjust
 import { registerBuyer, updateBuyer, getBuyer, deleteBuyer } from './../controllers/buyerControllers.js'; // Adjust the path as needed
 import { registerSeller, getSeller, updateSeller, deleteSeller } from './../controllers/sellerControllers.js'; // Adjust the path as needed
 import validateToken from '../middleware/validation.js';
+import authenticateToken from '../middleware/authJWT.js';
 import upload from '../middleware/multer.js';
 
 // Create an Express app
@@ -23,7 +24,7 @@ router.delete('/buyer/delete/:id', deleteBuyer);
 
 // seller routes
 router.post('/register/seller', upload.single('image'), registerSeller); // Changed to GET for accessing the home route
-router.put('/seller/update/:id', updateSeller);
+router.post('/seller/update/:id', updateSeller);
 router.get('/seller/read/:id', getSeller);
 router.delete('/seller/delete/:id', deleteSeller);
 
